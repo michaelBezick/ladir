@@ -58,6 +58,43 @@ Instead of generating reasoning chains autoregressively, LaDiR performs **latent
    bash scripts/train_vae.sh
    ```
 
+### Preparing GSM8K Data
+
+If `data/gsm_train.json`, `data/gsm_valid.json`, `data/gsm_test.json`, and
+`data/gsm_hard.json` are present, prepare the JSONL files expected by this repo:
+
+```bash
+python prepare_gsm8k_data.py
+```
+
+This writes:
+
+- `data/vae_train.jsonl` and `data/vae_val.jsonl` for VAE training.
+- `data/train.jsonl` and `data/val.jsonl` for diffusion training.
+- `data/test.jsonl` and `data/hard.jsonl` for held-out evaluation.
+
+### Training a Latent Scorer for Diffusion Steering
+
+1. Generate on-policy scorer data from diffusion rollouts:
+   ```bash
+   python generate_scorer_data.py \
+     --data-file data/train.jsonl \
+     --diffusion-ckpt ckpt/vae_diffusion_experiment/checkpoint-2500 \
+     --output-dir data/scorer \
+     --num-rollouts 8
+   ```
+
+2. Train the scorer:
+   ```bash
+   python train_scorer.py \
+     --metadata data/scorer/metadata.jsonl \
+     --model-name-or-path meta-llama/Llama-3.1-8B \
+     --output-dir checkpoints/latent_scorer
+   ```
+
+The scorer exposes `get_reward(...)` and `get_reward_gradient(...)` for use with
+`LMFusionModel.denoise_with_reward_guidance(...)`.
+
 ## ⚙️ Configuration
 
 The model can be configured through YAML files in the `configs/` directory. Key parameters include:

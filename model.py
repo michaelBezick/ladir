@@ -7,6 +7,7 @@ import json
 from torch.utils.checkpoint import checkpoint
 from transformers.configuration_utils import PretrainedConfig
 
+from answer_utils import answers_match
 from fm_noise_scheduler import FlowMatchEulerDiscreteScheduler
 
 def count_parameters(model: nn.Module) -> int:
@@ -295,7 +296,7 @@ class LMFusionModel(nn.Module):
     def get_dict_list(self, pred_thought_tokens_list, gt_thought_tokens, input, output, timestep_list=None):
         dict_list = []
         gt_cot_text = self.autoencoder.decode_text(gt_thought_tokens)
-        if gt_cot_text in output:
+        if answers_match(gt_cot_text, output):
             reward = 1.0
         else:
             reward = 0.0
@@ -305,7 +306,7 @@ class LMFusionModel(nn.Module):
 
         for bs in range(len(pred_thought_tokens_list)):
             lst_cot_text = self.autoencoder.decode_text(pred_thought_tokens_list[bs][-1].unsqueeze(0))
-            if lst_cot_text in output:
+            if answers_match(lst_cot_text, output):
                 lst_reward = 1.0
             else:
                 lst_reward = 0.0
@@ -317,7 +318,7 @@ class LMFusionModel(nn.Module):
             end_time = time.time()
             print(f"decoding batch {bs} time: {end_time - start_time}s")
             for t in range(len(pred_thought_tokens_list[bs])):
-                if cot_text_list[t] in output:
+                if answers_match(cot_text_list[t], output):
                     reward = 1.0
                 else:
                     reward = 0.0
@@ -737,7 +738,7 @@ class LMFusionModel(nn.Module):
 
         return cot_text, mse
 
-    def denoise_debug(self, q_input_ids, gt_thought_tokens, guidance_scale=1, generator=None):
+    def denoise_debug(self, q_input_ids, gt_thought_tokens, guidance_scale=1, num_inference_steps=50, generator=None):
         """Run diffusion denoising process."""
 
         bs, seq, token_hidden_dim = gt_thought_tokens.shape
@@ -745,7 +746,7 @@ class LMFusionModel(nn.Module):
         x = torch.randn(bs, seq, token_hidden_dim, dtype=torch.bfloat16).to(q_input_ids.device)
         
         self.sample_scheduler._step_index = None
-        self.sample_scheduler.set_timesteps(num_inference_steps=50)
+        self.sample_scheduler.set_timesteps(num_inference_steps=num_inference_steps)
         
         ret_list = []
         timestep_list = []
@@ -766,7 +767,7 @@ class LMFusionModel(nn.Module):
         timestep_list.append(0)
         return torch.stack(ret_list, dim=0).transpose(0, 1), timestep_list
     
-    def denoise(self, q_input_ids, gt_thought_tokens, guidance_scale=1, generator=None) -> torch.Tensor:
+    def denoise(self, q_input_ids, gt_thought_tokens, guidance_scale=1, num_inference_steps=50, generator=None) -> torch.Tensor:
         """Run diffusion denoising process."""
 
         bs, seq, token_hidden_dim = gt_thought_tokens.shape
@@ -778,7 +779,7 @@ class LMFusionModel(nn.Module):
         
         if self.sample_scheduler.config.prediction_type == "flow":
             self.sample_scheduler._step_index = None
-        self.sample_scheduler.set_timesteps(num_inference_steps=50)
+        self.sample_scheduler.set_timesteps(num_inference_steps=num_inference_steps)
         
         #print(self.noise_scheduler.timesteps)
         for t in self.sample_scheduler.timesteps:
@@ -914,26 +915,49 @@ class LMFusionModel(nn.Module):
         return x
 
 
-    def denoise_with_reward_guidance(self, q_input_ids, gt_thought_tokens, lrm, lrm_input_ids, lrm_scale=1.0, reward_guidance_scale=1.0, guidance_scale=1, generator=None) -> torch.Tensor:
+    def denoise_with_reward_guidance(
+        self,
+        q_input_ids,
+        gt_thought_tokens,
+        lrm,
+        lrm_input_ids=None,
+        lrm_scale=1.0,
+        reward_guidance_scale=1.0,
+        guidance_scale=1,
+        grad_clip_norm=1.0,
+        max_guidance_coeff=10.0,
+        num_inference_steps=50,
+        reward_eps=1e-6,
+        generator=None,
+    ) -> torch.Tensor:
         """
         Run diffusion denoising process with reward guidance.
         
         Args:
             q_input_ids: Input token IDs [B, T]
             gt_thought_tokens: Ground truth thought tokens [B, N, D]
-            reward_guidance_scale: Scale factor for reward gradient guidance
+            lrm: Latent scorer with get_reward and get_reward_gradient methods.
+            lrm_input_ids: Tokenized scorer question input. Defaults to q_input_ids.
+            reward_guidance_scale: Scale factor for scorer gradient guidance.
             guidance_scale: Scale factor for classifier-free guidance
+            grad_clip_norm: Per-sample max norm for scorer gradients. Set <=0 to disable.
+            max_guidance_coeff: Upper bound for the flow-time reward coefficient.
             generator: Random number generator for noise
             
         Returns:
             torch.Tensor: Denoised thought tokens [B, N, D]
         """
         bs, seq, token_hidden_dim = gt_thought_tokens.shape
-        x = torch.randn(bs, seq, token_hidden_dim, dtype=torch.bfloat16).to(q_input_ids.device)
+        x = torch.randn(bs, seq, token_hidden_dim, dtype=torch.bfloat16).to(q_input_ids.device) * 2.5
+        if lrm_input_ids is None:
+            lrm_input_ids = q_input_ids
+        lrm_input_ids = lrm_input_ids.to(q_input_ids.device)
+        if hasattr(lrm, "eval"):
+            lrm.eval()
         
         if self.sample_scheduler.config.prediction_type == "flow":
             self.sample_scheduler._step_index = None
-        self.sample_scheduler.set_timesteps(num_inference_steps=50)
+        self.sample_scheduler.set_timesteps(num_inference_steps=num_inference_steps)
 
         timestep = self.sample_scheduler.timesteps[0]
         self.sample_scheduler._init_step_index(timestep)
@@ -953,25 +977,27 @@ class LMFusionModel(nn.Module):
                 # Get the base model prediction
                 model_pred = self.inference_step(q_input_ids, proj_x, timestep, infer_cfg=guidance_scale)  # [B, N, tht_token_dim]
             
-            # Get reward gradient and project it to match model prediction shape
-            _, reward_grad = lrm.get_reward_gradient(lrm_input_ids, x, timestep, lrm_scale=lrm_scale) 
-            
-            #reward_grad = torch.clamp(reward_grad, -0.05, 0.05)
-            #print(f"model_pred={model_pred}")
-            
-            #print(f"self.sample_scheduler._step_index={self.sample_scheduler._step_index+1}")
+            reward, reward_grad = lrm.get_reward_gradient(
+                lrm_input_ids,
+                x,
+                timestep,
+                lrm_scale=lrm_scale,
+            )
+            reward_grad = torch.nan_to_num(reward_grad.float(), nan=0.0, posinf=0.0, neginf=0.0)
+            grad_norm = reward_grad.flatten(1).norm(dim=1).clamp_min(reward_eps)
+            if grad_clip_norm and grad_clip_norm > 0:
+                scale = (grad_clip_norm / grad_norm).clamp(max=1.0).view(bs, 1, 1)
+                reward_grad = reward_grad * scale
 
-            sigma = self.sample_scheduler.sigmas[self.sample_scheduler._step_index+1]
+            sigmas = self.sample_scheduler.sigmas.to(device=x.device, dtype=torch.float32)
+            step_index = self.sample_scheduler._step_index or 0
+            sigma = sigmas[step_index].clamp(min=0.0, max=1.0 - reward_eps)
+            coeff = (sigma / (1.0 - sigma + reward_eps)).clamp(max=max_guidance_coeff)
 
-            #print(f"sigmas={sigma}, coeff={sigma / (1 - sigma)}")
-
-            # Combine the base prediction with reward guidance
-
-            guided_pred = model_pred - (sigma / (1 - sigma) * reward_guidance_scale * reward_grad)
-            #x = x - dts[:, i] * v_pred
-
-
-            # guided_pred = model_pred + sigmas / (1 - sigmas) * reward_grad
+            # For flow prediction, ascending the reward means subtracting the
+            # reward gradient from the predicted velocity before the Euler step.
+            guided_pred = model_pred.float() - (coeff * reward_guidance_scale * reward_grad)
+            guided_pred = guided_pred.to(model_pred.dtype)
             
             # Take a step with the guided prediction
             x = self.sample_scheduler.step(
@@ -983,7 +1009,9 @@ class LMFusionModel(nn.Module):
             
             # Print progress
             mse_loss = nn.functional.mse_loss(x.float(), gt_thought_tokens.float())
-            print(f"mse_loss at step {t}={mse_loss}")
+            mean_reward = reward.float().mean().item()
+            mean_grad_norm = grad_norm.float().mean().item()
+            print(f"mse_loss at step {t}={mse_loss}, reward={mean_reward:.4f}, grad_norm={mean_grad_norm:.4f}")
 
         reward = lrm.get_reward(lrm_input_ids, x, rm_cfg=lrm_scale) 
         #print(f"final reward={reward}")

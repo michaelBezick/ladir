@@ -133,9 +133,11 @@ if __name__ == '__main__':
         import torch.distributed as dist
         dist.init_process_group(backend='nccl')
 
-    #yaml_path, args_list = sys.argv[1], sys.argv[2:]
     args_list = sys.argv[1:]
-    yaml_path = "configs/cd_formal_8B_VAE_conn.yaml"
+    if args_list and args_list[0].endswith((".yaml", ".yml")):
+        yaml_path, args_list = args_list[0], args_list[1:]
+    else:
+        yaml_path = "configs/cd_formal_8B_VAE_conn.yaml"
     with open(yaml_path) as f:
         yaml_cfg = om.load(f)
     cli_cfg = om.from_cli(args_list)

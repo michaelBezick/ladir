@@ -6,6 +6,7 @@ This is a placeholder implementation - you may need to implement the actual sche
 import torch
 import torch.nn as nn
 from typing import Optional, Union
+from types import SimpleNamespace
 
 
 class FlowMatchEulerDiscreteScheduler:
@@ -18,7 +19,7 @@ class FlowMatchEulerDiscreteScheduler:
     
     def __init__(self, num_train_timesteps: int = 1000):
         self.num_train_timesteps = num_train_timesteps
-        self.config = {"prediction_type": "flow"}
+        self.config = SimpleNamespace(prediction_type="flow")
         self.timesteps = None
         self.sigmas = None
         self._step_index = None
@@ -29,8 +30,8 @@ class FlowMatchEulerDiscreteScheduler:
         timesteps = torch.linspace(self.num_train_timesteps - 1, 0, num_inference_steps)
         self.timesteps = timesteps.long()
         
-        # Create sigmas (placeholder)
-        self.sigmas = torch.ones_like(timesteps) * 0.1
+        self.sigmas = torch.linspace(1.0, 0.0, num_inference_steps + 1)
+        self._step_index = None
         
     def add_noise(self, original_samples, noise, timesteps):
         """Add noise to original samples."""
@@ -44,11 +45,23 @@ class FlowMatchEulerDiscreteScheduler:
             def __init__(self, prev_sample):
                 self.prev_sample = prev_sample
                 
-        # Simple step (placeholder)
-        prev_sample = sample - 0.01 * model_output
+        if self._step_index is None:
+            self._init_step_index(timestep)
+
+        sigmas = self.sigmas.to(device=sample.device, dtype=sample.dtype)
+        sigma = sigmas[self._step_index]
+        next_sigma = sigmas[self._step_index + 1]
+        dt = sigma - next_sigma
+        prev_sample = sample - dt * model_output
+        self._step_index = min(self._step_index + 1, self.num_inference_steps - 1)
         return StepOutput(prev_sample)
         
     def _init_step_index(self, timestep):
         """Initialize step index."""
         if self._step_index is None:
-            self._step_index = 0
+            if self.timesteps is None:
+                self._step_index = 0
+                return
+            timestep = torch.as_tensor(timestep, device=self.timesteps.device)
+            matches = (self.timesteps == timestep.long()).nonzero(as_tuple=True)[0]
+            self._step_index = int(matches[0].item()) if len(matches) else 0
