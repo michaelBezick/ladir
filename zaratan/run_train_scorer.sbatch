@@ -14,6 +14,7 @@ EXTRA_ARGS="${EXTRA_ARGS:-}"
 mkdir -p "${REPO_ROOT}/logs/slurm"
 cd "${REPO_ROOT}"
 source "${VENV_PATH}/bin/activate"
+python zaratan/check_python_env.py
 
 export HF_HOME="${HF_HOME:-${REPO_ROOT}/.hf_cache}"
 export TOKENIZERS_PARALLELISM=false
