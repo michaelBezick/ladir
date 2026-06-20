@@ -1,6 +1,7 @@
-# Zaratan GSM8K Jobs
+# Zaratan DART-Math Jobs
 
-Run `python prepare_gsm8k_data.py` before submitting training jobs.
+Run `python prepare_dart_math_data.py` before submitting training jobs. By
+default this prepares the released `hkust-nlp/dart-math-hard` Prop2Diff split.
 
 Recommended order:
 

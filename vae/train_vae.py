@@ -18,7 +18,7 @@ warnings.filterwarnings("ignore")
 
 @dataclass
 class ModelArguments:
-    model_name_or_path: str = field(default="meta-llama/Llama-3.2-1B-Instruct")
+    model_name_or_path: str = field(default="meta-llama/Llama-3.1-8B")
     lora_r: int = field(
         default=128,
         metadata={"help": "lora rank"}

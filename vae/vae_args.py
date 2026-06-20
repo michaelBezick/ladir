@@ -7,7 +7,7 @@ from typing import Optional
 
 @dataclass
 class ModelArguments:
-    model_name_or_path: str = field(default="meta-llama/Llama-3.2-1B-Instruct")
+    model_name_or_path: str = field(default="meta-llama/Llama-3.1-8B")
     lora_r: int = field(
         default=128,
         metadata={"help": "lora rank"}
@@ -113,7 +113,7 @@ def parse_args():
     parser = argparse.ArgumentParser(description="Fine-tune a LLaMA model with LoRA.")
 
     # Add arguments dynamically
-    parser.add_argument("--model_name_or_path", type=str, default="deepseek-ai/DeepSeek-R1-Distill-Llama-8B", help="Pretrained model path.")
+    parser.add_argument("--model_name_or_path", type=str, default="meta-llama/Llama-3.1-8B", help="Pretrained model path.")
     parser.add_argument("--lora_r", type=int, default=128, help="LoRA rank.")
     parser.add_argument("--lora_alpha", type=int, default=32, help="LoRA scaling factor.")
     parser.add_argument("--lora_dropout", type=float, default=0.05, help="LoRA dropout rate.")

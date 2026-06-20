@@ -19,7 +19,7 @@ export VENV_PATH="${VENV_PATH:-${REPO_ROOT}/.venv}"
 export HF_HOME="${HF_HOME:-${REPO_ROOT}/.hf_cache}"
 export LLM_MODEL="${LLM_MODEL:-meta-llama/Llama-3.1-8B}"
 export OUTPUT_DIR="${OUTPUT_DIR:-checkpoints/vae_model}"
-export RUN_NAME="${RUN_NAME:-gsm8k-vae}"
+export RUN_NAME="${RUN_NAME:-dart-math-vae}"
 export EXTRA_ARGS="${EXTRA_ARGS:-}"
 
 mkdir -p "${LOG_DIR}"

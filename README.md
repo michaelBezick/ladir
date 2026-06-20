@@ -58,6 +58,23 @@ Instead of generating reasoning chains autoregressively, LaDiR performs **latent
    bash scripts/train_vae.sh
    ```
 
+### Preparing DART-Math Data
+
+The LaDiR paper trains on DART-Math and evaluates on held-out math benchmarks.
+Prepare the JSONL files expected by this repo with:
+
+```bash
+python prepare_dart_math_data.py
+```
+
+By default this downloads `hkust-nlp/dart-math-hard`, writes deterministic
+train/validation/test splits, and mirrors the training/validation splits to the
+VAE filenames:
+
+- `data/vae_train.jsonl` and `data/vae_val.jsonl` for VAE training.
+- `data/train.jsonl` and `data/val.jsonl` for diffusion training.
+- `data/test.jsonl` and `data/hard.jsonl` for held-out checks.
+
 ### Preparing GSM8K Data
 
 If `data/gsm_train.json`, `data/gsm_valid.json`, `data/gsm_test.json`, and

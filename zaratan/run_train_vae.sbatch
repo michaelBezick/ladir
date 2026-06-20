@@ -7,7 +7,7 @@ REPO_ROOT="${REPO_ROOT:?REPO_ROOT not set}"
 VENV_PATH="${VENV_PATH:-${REPO_ROOT}/.venv}"
 LLM_MODEL="${LLM_MODEL:-meta-llama/Llama-3.1-8B}"
 OUTPUT_DIR="${OUTPUT_DIR:-checkpoints/vae_model}"
-RUN_NAME="${RUN_NAME:-gsm8k-vae}"
+RUN_NAME="${RUN_NAME:-dart-math-vae}"
 NUM_GPUS="${NUM_GPUS:-${SLURM_GPUS_ON_NODE:-1}}"
 MASTER_PORT="${MASTER_PORT:-46079}"
 EXTRA_ARGS="${EXTRA_ARGS:-}"
@@ -50,7 +50,7 @@ cmd=(
   --ddp_backend nccl
   --fsdp 'hybrid_shard auto_wrap'
   --fsdp_config '{"backward_prefetch": "backward_pre", "forward_prefetch": true, "cpu_ram_efficient_loading": true, "sync_module_states": true, "transformer_layer_cls_to_wrap": ["LlamaDecoderLayer"], "use_orig_params": true, "activation_checkpointing": false}'
-  --notes "GSM8K VAE training"
+  --notes "DART-Math VAE training"
 )
 
 if [[ -n "${EXTRA_ARGS}" ]]; then
