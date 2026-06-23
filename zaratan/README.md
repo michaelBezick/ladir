@@ -10,13 +10,13 @@ Recommended order:
 
 1. Train the VAE:
    ```bash
-   PARTITION=gpu NUM_GPUS=8 zaratan/submit_train_vae.sh
+   PARTITION=gpu zaratan/submit_train_vae.sh
    ```
 
 2. Update `configs/cd_formal_8B_VAE_conn.yaml` so `ae.icae_ckpt` points at the
    trained VAE checkpoint, then train diffusion:
    ```bash
-   PARTITION=gpu NUM_GPUS=8 zaratan/submit_train_diffusion.sh
+   PARTITION=gpu zaratan/submit_train_diffusion.sh
    ```
 
 3. Generate scorer data from a trained diffusion checkpoint:
@@ -35,5 +35,6 @@ Common overrides:
 - `VENV_PATH=/path/to/venv`
 - `HF_HOME=/path/to/hf_cache`
 - `LLM_MODEL=/path/to/another/local/Llama-3.1-8B`
+- `NUM_GPUS=4` or `NUM_GPUS=8` for larger VAE/diffusion runs; default is `2`.
 - `ACCOUNT=... PARTITION=... QOS=... GPU_TYPE=a100`
 - `EXTRA_ARGS="trainer.learning_rate=5e-5"` for diffusion config overrides.
