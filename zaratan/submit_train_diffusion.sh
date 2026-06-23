@@ -17,6 +17,9 @@ MEMORY="${MEMORY:-128G}"
 export REPO_ROOT NUM_GPUS
 export VENV_PATH="${VENV_PATH:-${REPO_ROOT}/.venv}"
 export HF_HOME="${HF_HOME:-${REPO_ROOT}/.hf_cache}"
+export HF_HUB_OFFLINE="${HF_HUB_OFFLINE:-1}"
+export TRANSFORMERS_OFFLINE="${TRANSFORMERS_OFFLINE:-1}"
+export HF_DATASETS_OFFLINE="${HF_DATASETS_OFFLINE:-1}"
 export CONFIG_PATH="${CONFIG_PATH:-configs/cd_formal_8B_VAE_conn.yaml}"
 export EXTRA_ARGS="${EXTRA_ARGS:-}"
 

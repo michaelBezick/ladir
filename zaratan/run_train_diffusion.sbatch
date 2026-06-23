@@ -16,6 +16,9 @@ source "${VENV_PATH}/bin/activate"
 python zaratan/check_python_env.py
 
 export HF_HOME="${HF_HOME:-${REPO_ROOT}/.hf_cache}"
+export HF_HUB_OFFLINE="${HF_HUB_OFFLINE:-1}"
+export TRANSFORMERS_OFFLINE="${TRANSFORMERS_OFFLINE:-1}"
+export HF_DATASETS_OFFLINE="${HF_DATASETS_OFFLINE:-1}"
 export TOKENIZERS_PARALLELISM=false
 export PYTHONUNBUFFERED=1
 export WANDB_MODE="${WANDB_MODE:-offline}"

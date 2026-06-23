@@ -50,15 +50,21 @@ def main(cfg):
     TEXT_LLAMA_PATH = cfg.model.llm_model_name_or_path
 
     # Load text LLaMA
-    text_llama_config = AutoConfig.from_pretrained(TEXT_LLAMA_PATH, use_flash_attention=False, _flash_attn_2_enabled=False)
+    text_llama_config = AutoConfig.from_pretrained(
+        TEXT_LLAMA_PATH,
+        use_flash_attention=False,
+        _flash_attn_2_enabled=False,
+        local_files_only=True,
+    )
 
 
     text_llama = AutoModelForCausalLM.from_pretrained(TEXT_LLAMA_PATH, 
                                                   config=text_llama_config,
                                                     torch_dtype=torch.bfloat16, # or torch.bfloat16
+                                                    local_files_only=True,
                                                   )
 
-    text_tokenizer = AutoTokenizer.from_pretrained(TEXT_LLAMA_PATH)
+    text_tokenizer = AutoTokenizer.from_pretrained(TEXT_LLAMA_PATH, local_files_only=True)
 
     text_tokenizer.pad_token_id = text_tokenizer.eos_token_id
 

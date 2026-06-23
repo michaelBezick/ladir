@@ -4,10 +4,11 @@ import json
 import transformers
 from typing import Optional
 
+DEFAULT_LLM_MODEL = "/scratch/zt1/project/kaiqing-prj/user/mbezick/ladir/models/Llama-3.1-8B"
 
 @dataclass
 class ModelArguments:
-    model_name_or_path: str = field(default="meta-llama/Llama-3.1-8B")
+    model_name_or_path: str = field(default=DEFAULT_LLM_MODEL)
     lora_r: int = field(
         default=128,
         metadata={"help": "lora rank"}
@@ -113,7 +114,7 @@ def parse_args():
     parser = argparse.ArgumentParser(description="Fine-tune a LLaMA model with LoRA.")
 
     # Add arguments dynamically
-    parser.add_argument("--model_name_or_path", type=str, default="meta-llama/Llama-3.1-8B", help="Pretrained model path.")
+    parser.add_argument("--model_name_or_path", type=str, default=DEFAULT_LLM_MODEL, help="Pretrained model path.")
     parser.add_argument("--lora_r", type=int, default=128, help="LoRA rank.")
     parser.add_argument("--lora_alpha", type=int, default=32, help="LoRA scaling factor.")
     parser.add_argument("--lora_dropout", type=float, default=0.05, help="LoRA dropout rate.")

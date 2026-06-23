@@ -5,12 +5,13 @@ Configuration classes for the VAE-based diffusion model.
 from dataclasses import dataclass
 from typing import Optional
 
+DEFAULT_LLM_MODEL = "/scratch/zt1/project/kaiqing-prj/user/mbezick/ladir/models/Llama-3.1-8B"
 
 @dataclass
 class LMFusionConfig:
     """Configuration class for LMFusion model."""
     hidden_size: int = 768
-    model_name_or_path: str = "meta-llama/Llama-3.2-1B-Instruct"
+    model_name_or_path: str = DEFAULT_LLM_MODEL
     use_flash_attn: bool = True
     freeze_tokenizer: bool = True
     discrete: bool = False

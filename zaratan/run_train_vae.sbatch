@@ -5,7 +5,7 @@ set -euo pipefail
 
 REPO_ROOT="${REPO_ROOT:?REPO_ROOT not set}"
 VENV_PATH="${VENV_PATH:-${REPO_ROOT}/.venv}"
-LLM_MODEL="${LLM_MODEL:-meta-llama/Llama-3.1-8B}"
+LLM_MODEL="${LLM_MODEL:-/scratch/zt1/project/kaiqing-prj/user/mbezick/ladir/models/Llama-3.1-8B}"
 OUTPUT_DIR="${OUTPUT_DIR:-checkpoints/vae_model}"
 RUN_NAME="${RUN_NAME:-dart-math-vae}"
 NUM_GPUS="${NUM_GPUS:-${SLURM_GPUS_ON_NODE:-1}}"
@@ -18,6 +18,9 @@ source "${VENV_PATH}/bin/activate"
 python zaratan/check_python_env.py
 
 export HF_HOME="${HF_HOME:-${REPO_ROOT}/.hf_cache}"
+export HF_HUB_OFFLINE="${HF_HUB_OFFLINE:-1}"
+export TRANSFORMERS_OFFLINE="${TRANSFORMERS_OFFLINE:-1}"
+export HF_DATASETS_OFFLINE="${HF_DATASETS_OFFLINE:-1}"
 export TOKENIZERS_PARALLELISM=false
 export PYTHONUNBUFFERED=1
 export WANDB_MODE="${WANDB_MODE:-offline}"

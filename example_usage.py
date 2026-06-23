@@ -10,6 +10,8 @@ from vae.vae_args import parse_args
 from peft import LoraConfig
 import argparse
 
+DEFAULT_LLM_MODEL = "/scratch/zt1/project/kaiqing-prj/user/mbezick/ladir/models/Llama-3.1-8B"
+
 
 def example_vae_training():
     """Example of how to train the VAE model."""
@@ -17,7 +19,7 @@ def example_vae_training():
     
     # Parse arguments (you would typically pass these via command line)
     args = argparse.Namespace(
-        model_name_or_path="meta-llama/Llama-3.2-1B-Instruct",
+        model_name_or_path=DEFAULT_LLM_MODEL,
         output_dir="checkpoints/vae_example",
         input_type="full_format",
         test_size=10,
@@ -49,17 +51,18 @@ def example_model_loading():
     """Example of how to load a pre-trained model."""
     print("\n=== Model Loading Example ===")
     
-    model_name = "meta-llama/Llama-3.2-1B-Instruct"
+    model_name = DEFAULT_LLM_MODEL
     
     try:
         # Load tokenizer
-        tokenizer = AutoTokenizer.from_pretrained(model_name)
+        tokenizer = AutoTokenizer.from_pretrained(model_name, local_files_only=True)
         print(f"Tokenizer loaded: {model_name}")
         
         # Load model
         model = AutoModelForCausalLM.from_pretrained(
             model_name,
-            torch_dtype=torch.bfloat16
+            torch_dtype=torch.bfloat16,
+            local_files_only=True,
         )
         print(f"Model loaded: {model_name}")
         
@@ -70,7 +73,7 @@ def example_model_loading():
         
     except Exception as e:
         print(f"Error loading model: {e}")
-        print("Note: You may need to authenticate with Hugging Face Hub")
+        print("Note: Check that the local model path exists on this machine.")
 
 
 def example_config_usage():
@@ -80,7 +83,7 @@ def example_config_usage():
     # Example configuration
     config = {
         "model": {
-            "llm_model_name_or_path": "meta-llama/Llama-3.2-1B-Instruct",
+            "llm_model_name_or_path": DEFAULT_LLM_MODEL,
             "use_flash_attn": True,
             "freeze_tokenizer": True,
         },

@@ -17,9 +17,12 @@ MEMORY="${MEMORY:-64G}"
 export REPO_ROOT
 export VENV_PATH="${VENV_PATH:-${REPO_ROOT}/.venv}"
 export HF_HOME="${HF_HOME:-${REPO_ROOT}/.hf_cache}"
+export HF_HUB_OFFLINE="${HF_HUB_OFFLINE:-1}"
+export TRANSFORMERS_OFFLINE="${TRANSFORMERS_OFFLINE:-1}"
+export HF_DATASETS_OFFLINE="${HF_DATASETS_OFFLINE:-1}"
 export METADATA="${METADATA:-data/scorer/metadata.jsonl}"
 export VAL_METADATA="${VAL_METADATA:-}"
-export LLM_MODEL="${LLM_MODEL:-meta-llama/Llama-3.1-8B}"
+export LLM_MODEL="${LLM_MODEL:-/scratch/zt1/project/kaiqing-prj/user/mbezick/ladir/models/Llama-3.1-8B}"
 export OUTPUT_DIR="${OUTPUT_DIR:-checkpoints/latent_scorer}"
 export EXTRA_ARGS="${EXTRA_ARGS:-}"
 

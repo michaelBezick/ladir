@@ -2,6 +2,9 @@
 
 Run `python prepare_dart_math_data.py` before submitting training jobs. By
 default this prepares the released `hkust-nlp/dart-math-hard` Prop2Diff split.
+The Zaratan job wrappers default to the local base model at
+`/scratch/zt1/project/kaiqing-prj/user/mbezick/ladir/models/Llama-3.1-8B` and set
+Hugging Face/Transformers offline mode.
 
 Recommended order:
 
@@ -31,6 +34,6 @@ Common overrides:
 
 - `VENV_PATH=/path/to/venv`
 - `HF_HOME=/path/to/hf_cache`
-- `LLM_MODEL=/path/to/local/Llama-3.1-8B`
+- `LLM_MODEL=/path/to/another/local/Llama-3.1-8B`
 - `ACCOUNT=... PARTITION=... QOS=... GPU_TYPE=a100`
 - `EXTRA_ARGS="trainer.learning_rate=5e-5"` for diffusion config overrides.

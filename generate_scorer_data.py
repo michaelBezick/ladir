@@ -68,13 +68,15 @@ def load_diffusion_model(cfg, device):
         cfg.model.llm_model_name_or_path,
         use_flash_attention=False,
         _flash_attn_2_enabled=False,
+        local_files_only=True,
     )
     text_llama = AutoModelForCausalLM.from_pretrained(
         cfg.model.llm_model_name_or_path,
         config=text_config,
         torch_dtype=torch.bfloat16,
+        local_files_only=True,
     ).to(device)
-    tokenizer = AutoTokenizer.from_pretrained(cfg.model.llm_model_name_or_path)
+    tokenizer = AutoTokenizer.from_pretrained(cfg.model.llm_model_name_or_path, local_files_only=True)
     add_thought_tokens(tokenizer)
 
     model = LMFusionModel(

@@ -6,6 +6,10 @@ MASTER_ADDR=$(hostname -s)
 export PATH=$CUDA_HOME/bin:$PATH
 # export WANDB_API_KEY=your_wandb_api_key_here
 TASK="vae_train"
+LLM_MODEL="${LLM_MODEL:-/scratch/zt1/project/kaiqing-prj/user/mbezick/ladir/models/Llama-3.1-8B}"
+export HF_HUB_OFFLINE="${HF_HUB_OFFLINE:-1}"
+export TRANSFORMERS_OFFLINE="${TRANSFORMERS_OFFLINE:-1}"
+export HF_DATASETS_OFFLINE="${HF_DATASETS_OFFLINE:-1}"
 
 srun -e logs/$TASK.err -o logs/$TASK.out sh -c "python -m torch.distributed.run \
     --node_rank \$((SLURM_PROCID)) \
@@ -15,7 +19,7 @@ srun -e logs/$TASK.err -o logs/$TASK.out sh -c "python -m torch.distributed.run 
     --master_port 46079 \
     ../vae/train_vae.py \
     --run_name vae_train \
-    --model_name_or_path \"meta-llama/Llama-3.1-8B\" \
+    --model_name_or_path \"${LLM_MODEL}\" \
     --lora_r 512 \
     --lora_alpha 256 \
     --lora_dropout 0.05 \

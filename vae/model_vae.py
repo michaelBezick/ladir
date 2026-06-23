@@ -47,12 +47,20 @@ class VAE(torch.nn.Module):
         self.model_args = model_args
         self.training_args = training_args
         self.model_name = model_args.model_name_or_path
-        self.icae = AutoModelForCausalLM.from_pretrained(self.model_name, torch_dtype=torch.bfloat16)
+        self.icae = AutoModelForCausalLM.from_pretrained(
+            self.model_name,
+            torch_dtype=torch.bfloat16,
+            local_files_only=True,
+        )
         
         self.training = self.model_args.train    
         
         if self.training:    # independent model for gradient checkpointing
-            self.decoder = AutoModelForCausalLM.from_pretrained(self.model_name, torch_dtype=torch.bfloat16)
+            self.decoder = AutoModelForCausalLM.from_pretrained(
+                self.model_name,
+                torch_dtype=torch.bfloat16,
+                local_files_only=True,
+            )
 
         self.vocab_size = self.icae.config.vocab_size + 1    # [PAD] token
         self.pad_token_id = self.vocab_size - 1
@@ -89,7 +97,11 @@ class VAE(torch.nn.Module):
         #self.ae_token_embed = nn.Embedding(1, self.dim, padding_idx=None)
 
         self.loss_fct = nn.CrossEntropyLoss(ignore_index=-100)
-        self.tokenizer = AutoTokenizer.from_pretrained(self.model_name, use_fast=False)
+        self.tokenizer = AutoTokenizer.from_pretrained(
+            self.model_name,
+            use_fast=False,
+            local_files_only=True,
+        )
         self.append_sequence = torch.arange(self.vocab_size, self.vocab_size + self.mem_size, dtype=torch.long, device=self.device).unsqueeze(0)   # mem tokens
         
         if self.training:
